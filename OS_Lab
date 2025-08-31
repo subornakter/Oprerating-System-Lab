@@ -1,0 +1,469 @@
+#fcfs
+#!/bin/bash
+
+
+echo "INPUT"
+echo "Enter the number of processes--"
+read n
+
+declare -a pid
+declare -a bt
+declare -a wt
+declare -a tat
+
+
+for ((i = 0; i < n; i++)); do
+    pid[$i]=$((i))
+    echo "Enter burst time for Process ${pid[$i]}--"
+    read bt[$i]
+done
+
+wt[0]=0  
+
+for ((i = 1; i < n; i++)); do
+    wt[$i]=$((wt[$i-1] + bt[$i-1]))
+done
+
+
+for ((i = 0; i < n; i++)); do
+    tat[$i]=$((wt[$i] + bt[$i]))
+done
+
+
+echo "OUTPUT"
+echo -e "\nProcess\tBurst Time\tWaiting Time\tTurnaround Time"
+total_wt=0
+total_tat=0
+
+for ((i = 0; i < n; i++)); do
+    echo -e "P${pid[$i]}\t${bt[$i]}\t\t${wt[$i]}\t\t${tat[$i]}"
+    total_wt=$((total_wt + wt[$i]))
+    total_tat=$((total_tat + tat[$i]))
+done
+
+avg_wt=$(echo "scale=6; $total_wt / $n" | bc)
+avg_tat=$(echo "scale=6; $total_tat / $n" | bc)
+
+echo -e "\nAverage Waiting Time-- $avg_wt"
+echo "Average Turnaround Time-- $avg_tat"
+
+#sjf
+#!/bin/bash
+
+echo "INPUT"
+echo -n "Enter number of processes: "
+read n
+
+for (( i=0; i<n; i++ ))
+do
+    echo -n "Enter burst time for process $((i))-- "
+    read bt[$i]
+    pid[$i]=$i
+done
+
+# Sort burst times using simple bubble sort
+for (( i=0; i<n-1; i++ ))
+do
+    for (( j=0; j<n-i-1; j++ ))
+    do
+        if [ ${bt[j]} -gt ${bt[j+1]} ]
+        then
+            # Swap burst time
+            temp=${bt[j]}
+            bt[j]=${bt[j+1]}
+            bt[j+1]=$temp
+
+            # Swap process ID
+            temp=${pid[j]}
+            pid[j]=${pid[j+1]}
+            pid[j+1]=$temp
+        fi
+    done
+done
+
+# Calculate waiting and turnaround times
+wt[0]=0
+tat[0]=${bt[0]}
+total_wt=0
+total_tat=0
+
+for (( i=1; i<n; i++ ))
+do
+    wt[$i]=$(( wt[i-1] + bt[i-1] ))
+    tat[$i]=$(( wt[i] + bt[i] ))
+done
+
+echo "OUTPUT"
+echo -e "\nProcess\tBurst Time\tWaiting Time\tTurnaround Time"
+for (( i=0; i<n; i++ ))
+do
+    echo -e "p${pid[$i]}\t${bt[i]}\t\t${wt[i]}\t\t${tat[i]}"
+    total_wt=$(( total_wt + wt[i] ))
+    total_tat=$(( total_tat + tat[i] ))
+done
+
+# Average calculations
+avg_wt=$(echo "scale=6; $total_wt / $n" | bc)
+avg_tat=$(echo "scale=6; $total_tat / $n" | bc)
+
+echo -e "\nAverage Waiting Time-- $avg_wt"
+echo -e "Average Turnaround Time-- $avg_tat"
+
+#round_robin
+#!/bin/bash
+echo "INPUT:"
+echo  "Enter the number of processes-- "
+read n
+
+declare -a pid bt rt wt tat completed
+
+# Input burst times
+for ((i=0; i<n; i++))
+do
+    pid[i]=$((i+1))
+    echo -n "Enter Burst Time for process $((i+1)) -- "
+    read bt[i]
+    rt[i]=${bt[i]}
+    wt[i]=0
+    tat[i]=0
+    completed[i]=0
+done
+
+# Input time quantum
+echo -n "Enter the size of time slice -- "
+read tq
+
+# Round Robin Logic
+time=0
+remain=$n
+
+while (( remain > 0 ))
+do
+    for ((i=0; i<n; i++))
+    do
+        if (( rt[i] > 0 ))
+        then
+            if (( rt[i] > tq ))
+            then
+                time=$((time + tq))
+                rt[i]=$((rt[i] - tq))
+            else
+                time=$((time + rt[i]))
+                wt[i]=$((time - bt[i]))
+                rt[i]=0
+                tat[i]=$((bt[i] + wt[i]))
+                completed[i]=1
+                remain=$((remain - 1))
+            fi
+        fi
+    done
+done
+
+# Output
+echo -e "\nOUTPUT:"
+echo -e "PROCESS\tBURST TIME\tWAITING TIME\tTURNAROUND TIME"
+
+total_wt=0
+total_tat=0
+for ((i=0; i<n; i++))
+do
+    echo -e "${pid[i]}\t${bt[i]}\t\t${wt[i]}\t\t${tat[i]}"
+    total_wt=$((total_wt + wt[i]))
+    total_tat=$((total_tat + tat[i]))
+done
+
+# Averages with decimals
+avg_wt=$(echo "scale=6; $total_wt / $n" | bc)
+avg_tat=$(echo "scale=6; $total_tat / $n" | bc)
+
+echo -e "\nThe Average Turnaround time is-- $avg_tat"
+echo -e "Average Waiting time is----------- $avg_wt"
+
+#priority scheuling
+#!/bin/bash
+echo "INTPUT"
+echo  "Enter the number of processes -- "
+read n
+
+for (( i=0; i<n; i++ ))
+do
+    echo -n "Enter the Burst Time & Priority of Process $i --- "
+    read bt[$i] pr[$i]
+    pid[$i]=$i
+done
+
+# Sort processes by priority (lower value = higher priority)
+for (( i=0; i<n-1; i++ ))
+do
+    for (( j=0; j<n-i-1; j++ ))
+    do
+        if [ ${pr[j]} -gt ${pr[j+1]} ]
+        then
+            # Swap everything: priority, burst, pid
+            temp=${pr[j]}
+            pr[j]=${pr[j+1]}
+            pr[j+1]=$temp
+
+            temp=${bt[j]}
+            bt[j]=${bt[j+1]}
+            bt[j+1]=$temp
+
+            temp=${pid[j]}
+            pid[j]=${pid[j+1]}
+            pid[j+1]=$temp
+        fi
+    done
+done
+
+# Calculate waiting time & turnaround time
+wt[0]=0
+tat[0]=${bt[0]}
+total_wt=0
+total_tat=0
+
+for (( i=1; i<n; i++ ))
+do
+    wt[$i]=$(( wt[i-1] + bt[i-1] ))
+    tat[$i]=$(( wt[i] + bt[i] ))
+done
+
+# Output
+echo -e "\nOUTPUT"
+printf "%-10s %-10s %-12s %-15s %-10s\n" "PROCESS" "PRIORITY" "BURST TIME" "WAITING TIME" "TURNAROUND TIME"
+
+for (( i=0; i<n; i++ ))
+do
+    printf "%-10s %-10s %-12s %-15s %-10s\n" "$((pid[i]))" "${pr[i]}" "${bt[i]}" "${wt[i]}" "${tat[i]}"
+    total_wt=$(( total_wt + wt[i] ))
+    total_tat=$(( total_tat + tat[i] ))
+done
+
+# Averages
+avg_wt=$(echo "scale=6; $total_wt / $n" | bc)
+avg_tat=$(echo "scale=6; $total_tat / $n" | bc)
+
+echo -e "\nAverage Waiting Time is --- $avg_wt"
+echo -e "Average Turnaround Time is --- $avg_tat"
+
+#producer_consumer.c
+#include <stdio.h>
+#include <stdlib.h>
+
+int buffer = 0;
+int full = 0;
+
+void produce() {
+    if (full == 1) {
+        printf("Buffer is Full\n");
+    } else {
+        printf("Enter the value: ");
+        scanf("%d", &buffer);
+        full = 1;
+    }
+}
+
+void consume() {
+    if (full == 0) {
+        printf("Buffer is Empty\n");
+    } else {
+        printf("The consumed value is %d\n", buffer);
+        buffer = 0;
+        full = 0;
+    }
+}
+
+int main() {
+    int choice;
+    while (1) {
+        printf("\n1. Produce\t2. Consume\t3. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: produce(); break;
+            case 2: consume(); break;
+            case 3: exit(0);
+            default: printf("Invalid choice\n");
+        }
+    }
+    return 0;
+}
+
+#dining.c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int n, h, choice;
+    int hungry[20];   
+    int i, j, found;
+
+    printf("DINING PHILOSOPHER PROBLEM\n");
+    printf("Enter the total no. of philosophers: ");
+    scanf("%d", &n);
+
+    printf("How many are hungry : ");
+    scanf("%d", &h);
+
+    for (i = 0; i < h; i++) {
+        printf("Enter philosopher %d position: ", i + 1);
+        scanf("%d", &hungry[i]);
+    }
+
+    while (1) {
+        printf("\nOUTPUT\n");
+        printf("1. One can eat at a time\n");
+        printf("2. Two can eat at a time\n");
+        printf("3. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        if (choice == 1) {
+            printf("\nAllow one philosopher to eat at any time\n");
+            for (i = 0; i < h; i++) {
+                printf("P %d is granted to eat\n", hungry[i]);
+                for (j = 0; j < h; j++) {
+                    if (i != j)
+                        printf("P %d is waiting\n", hungry[j]);
+                }
+            }
+        }
+        else if (choice == 2) {
+            printf("\nAllow two philosophers to eat at the same time\n");
+            found = 0;
+            for (i = 0; i < h; i++) {
+                for (j = i + 1; j < h; j++) {
+                     if (abs(hungry[i] - hungry[j]) != 1 &&
+                        abs(hungry[i] - hungry[j]) != (n - 1)) {
+                       
+                        printf("P %d and P %d are granted to eat\n", hungry[i], hungry[j]);
+                        for (int k = 0; k < h; k++) {
+                            if (k != i && k != j)
+                                printf("P %d is waiting\n", hungry[k]);
+                        }
+                        found = 1;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+            if (!found) {
+                printf("No two philosophers can eat together (all are neighbours)\n");
+            }
+        }
+        else if (choice == 3) {
+            printf("Exiting...\n");
+            exit(0);
+        }
+        else {
+            printf("Invalid choice!\n");
+        }
+    }
+
+    return 0;
+}
+
+#MFT
+#!/bin/bash
+
+
+read -p "Enter the total memory available (in Bytes) -- " total_mem
+read -p "Enter the block size (in Bytes) -- " block_size
+read -p "Enter the number of processes -- " num_proc
+
+declare -a processes
+for ((i=1; i<=num_proc; i++))
+do
+    read -p "Enter memory required for process $i (in Bytes) -- " p
+    processes[$i]=$p
+done
+
+
+num_blocks=$((total_mem / block_size))
+echo -e "\nNo. of Blocks available in memory -- $num_blocks\n"
+
+
+allocated=0
+internal_frag=0
+external_frag=0
+
+echo -e "OUTPUT"
+echo -e "PROCESS\tMEMORY REQUIRED\tALLOCATED\tINTERNAL FRAGMENTATION"
+
+for ((i=1; i<=num_proc; i++))
+do
+    p=${processes[$i]}
+    if [ $allocated -lt $num_blocks ]; then
+        if [ $p -le $block_size ]; then
+            allocated=$((allocated + 1))
+            frag=$((block_size - p))
+            internal_frag=$((internal_frag + frag))
+            echo -e "$i\t$p\t\tYES\t\t$frag"
+        else
+            echo -e "$i\t$p\t\tNO\t\t-----"
+        fi
+    else
+        echo -e "$i\t$p\t\tNO\t\t-----"
+        external_frag=$((external_frag + p))
+    fi
+done
+
+
+echo -e "\nMemory is Full, Remaining Processes cannot be accommodated"
+echo "Total Internal Fragmentation is $internal_frag"
+echo "Total External Fragmentation is $external_frag"
+
+#MVT
+#!/bin/bash
+# MVT (Multiprogramming with Variable Tasks) Algorithm Simulation
+
+echo "Enter total memory available (in Bytes)--"
+read ms
+
+total=$ms
+allocated=0
+
+declare -a process
+declare -a mem
+
+i=0
+
+while [ $ms -gt 0 ]
+do
+    echo "Enter memory required for process $((i+1)) (in Bytes)--"
+    read req
+
+    if [ $req -le $ms ]
+    then
+        process[$i]=$((i+1))
+        mem[$i]=$req
+        ms=$((ms - req))
+        allocated=$((allocated + req))
+        echo "Memory is allocated for Process $((i+1))"
+    else
+        echo "Memory is Full"
+        break
+    fi
+
+    echo "Do you want to continue (y/n)--"
+    read choice
+    if [ "$choice" = "n" ]
+    then
+        break
+    fi
+    i=$((i+1))
+done
+
+echo
+echo "Total Memory Available = $total"
+echo
+echo "PROCESS   MEMORY ALLOCATED"
+for j in $(seq 0 $i)
+do
+    echo "   ${process[$j]}          ${mem[$j]}"
+done
+
+echo
+echo "Total Memory Allocated = $allocated"
+extfrag=$((total - allocated))
+echo "Total External Fragmentation = $extfrag"
