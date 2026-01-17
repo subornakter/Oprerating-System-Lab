@@ -1290,3 +1290,63 @@ else
     echo "System is NOT in Safe State(Deadlock Possible)."
 fi
 
+22.bankers2
+#!/bin/bash
+# SAFETY ALGORITHM (Banker's Algorithm - Single Resource)
+
+echo "Enter number of jobs:"
+read n
+
+declare -a pname
+declare -a max
+declare -a alloc
+declare -a need
+declare -a finish
+declare -a safe
+
+echo "Enter name and maximum resource required for each job:"
+for ((i=0; i<n; i++))
+do
+    read pname[$i] max[$i]
+    alloc[$i]=0
+    need[$i]=${max[$i]}
+    finish[$i]=0
+done
+
+echo "Enter the available resources:"
+read avail
+
+count=0
+
+while [ $count -lt $n ]
+do
+    found=0
+    for ((i=0; i<n; i++))
+    do
+        if [ ${finish[$i]} -eq 0 ] && [ ${need[$i]} -le $avail ]
+        then
+            avail=$((avail + alloc[$i] + need[$i]))
+            finish[$i]=1
+            safe[$count]=${pname[$i]}
+            count=$((count+1))
+            found=1
+        fi
+    done
+
+    if [ $found -eq 0 ]
+    then
+        break
+    fi
+done
+
+if [ $count -eq $n ]
+then
+    echo -n "Safe sequence is: "
+    for ((i=0; i<n; i++))
+    do
+        echo -n "${safe[$i]} "
+    done
+    echo
+else
+    echo "System is NOT in safe state"
+fi
