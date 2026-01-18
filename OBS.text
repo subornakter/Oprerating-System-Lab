@@ -1102,85 +1102,86 @@ done
 
 20.Two level
 #!/bin/bash
-# Two Level Directory Simulation (Fixed for "User not found")
-
 declare -A users
 
-while true
-do
-    echo
-    echo "1. Create User"
-    echo "2. Create File"
-    echo "3. Delete File"
-    echo "4. Search File"
-    echo "5. Display User Files"
-    echo "6. Exit"
+while true; do
+  echo -e "\n1. Create User\n2. Create File\n3. Delete File\n4. Search File\n5. Display User Files\n6. Exit"
+  read -p "Enter choice: " ch
 
-    read -p "Enter your choice: " ch
-
-    case $ch in
-        1)
-            read -p "Enter name of user: " user
-            if [[ ${users[$user]+_} ]]; then
-                echo "User '$user' already exists!"
-            else
-                users[$user]=""
-                echo "User '$user' created."
-            fi
-            ;;
-        2)
-            read -p "Enter name of user: " user
-            if [[ ${users[$user]+_} ]]; then
-                read -p "Enter name of file: " file
-                if [[ " ${users[$user]} " =~ " $file " ]]; then
-                    echo "File '$file' already exists under user '$user'."
-                else
-                    users[$user]="${users[$user]} $file"
-                    echo "File '$file' created under user '$user'."
-                fi
-            else
-                echo "User '$user' not found!"
-            fi
-            ;;
-        3)
-            read -p "Enter name of user: " user
-            read -p "Enter name of file to delete: " file
-            if [[ ${users[$user]+_} ]]; then
-                files=${users[$user]}
-                users[$user]=$(echo $files | sed "s/\b$file\b//g" | xargs)
-                echo "File '$file' deleted (if it existed)."
-            else
-                echo "User '$user' not found!"
-            fi
-            ;;
-        4)
-            read -p "Enter name of user: " user
-            read -p "Enter name of file to search: " file
-            if [[ ${users[$user]+_} ]] && echo " ${users[$user]} " | grep -wq "$file"; then
-                echo "File '$file' found under user '$user'."
-            else
-                echo "File '$file' not found."
-            fi
-            ;;
-        5)
-            echo
-            echo "User Files:"
-            for user in "${!users[@]}"; do
-                files="${users[$user]}"
-                if [[ -z "$files" ]]; then
-                    files="No files"
-                fi
-                echo "User: $user → Files: $files"
-            done
-            ;;
-        6)
-            echo "Exiting..."
-            exit 0
-            ;;
-        *)
-            echo "Invalid choice!"
-            ;;
-    esac
+  case $ch in
+    1)
+      read -p "Enter username: " user
+      if [ "${users[$user]+_}" ]; then
+        echo "User already exists!"
+      else
+        users[$user]=""
+        echo "User '$user' created."
+      fi
+      ;;
+    2)
+      read -p "Enter username: " user
+      if [ "${users[$user]+_}" ]; then
+        read -p "Enter filename: " file
+        # Append file, space separated
+        if [[ -z "${users[$user]}" ]]; then
+          users[$user]="$file"
+        else
+          users[$user]="${users[$user]} $file"
+        fi
+        echo "File '$file' created under user '$user'."
+      else
+        echo "User not found!"
+      fi
+      ;;
+    3)
+      read -p "Enter username: " user
+      read -p "Enter filename to delete: " file
+      if [ "${users[$user]+_}" ]; then
+        # Remove file from user's file list
+        files=(${users[$user]})
+        new_files=()
+        for f in "${files[@]}"; do
+          if [ "$f" != "$file" ]; then
+            new_files+=("$f")
+          fi
+        done
+        users[$user]="${new_files[*]}"
+        echo "File '$file' deleted (if existed)."
+      else
+        echo "User not found!"
+      fi
+      ;;
+    4)
+      read -p "Enter username: " user
+      read -p "Enter filename to search: " file
+      if [ "${users[$user]+_}" ]; then
+        files=(${users[$user]})
+        found=0
+        for f in "${files[@]}"; do
+          if [ "$f" == "$file" ]; then
+            found=1
+            break
+          fi
+        done
+        if [ $found -eq 1 ]; then
+          echo "File '$file' found under user '$user'."
+        else
+          echo "File not found."
+        fi
+      else
+        echo "User not found!"
+      fi
+      ;;
+    5)
+      for u in "${!users[@]}"; do
+        echo "User: $u → Files: ${users[$u]}"
+      done
+      ;;
+    6)
+      exit ;;
+    *)
+      echo "Invalid choice" ;;
+  esac
 done
 
 21.Bankers algorithm
