@@ -1,17 +1,14 @@
 #!/bin/bash
-# Two Level Directory Simulation
-
 declare -A users
 
-while true
-do
+while true; do
   echo -e "\n1. Create User\n2. Create File\n3. Delete File\n4. Search File\n5. Display User Files\n6. Exit"
   read -p "Enter choice: " ch
 
   case $ch in
     1)
       read -p "Enter username: " user
-      if [ "${users[$user]}" ]; then
+      if [ "${users[$user]+_}" ]; then
         echo "User already exists!"
       else
         users[$user]=""
@@ -20,9 +17,14 @@ do
       ;;
     2)
       read -p "Enter username: " user
-      if [ "${users[$user]}" ]; then
+      if [ "${users[$user]+_}" ]; then
         read -p "Enter filename: " file
-        users[$user]="${users[$user]} $file"
+        # Append file, space separated
+        if [[ -z "${users[$user]}" ]]; then
+          users[$user]="$file"
+        else
+          users[$user]="${users[$user]} $file"
+        fi
         echo "File '$file' created under user '$user'."
       else
         echo "User not found!"
@@ -31,22 +33,45 @@ do
     3)
       read -p "Enter username: " user
       read -p "Enter filename to delete: " file
-      files=${users[$user]}
-      users[$user]=$(echo $files | sed "s/\b$file\b//g")
-      echo "File '$file' deleted (if existed)."
+      if [ "${users[$user]+_}" ]; then
+        # Remove file from user's file list
+        files=(${users[$user]})
+        new_files=()
+        for f in "${files[@]}"; do
+          if [ "$f" != "$file" ]; then
+            new_files+=("$f")
+          fi
+        done
+        users[$user]="${new_files[*]}"
+        echo "File '$file' deleted (if existed)."
+      else
+        echo "User not found!"
+      fi
       ;;
     4)
       read -p "Enter username: " user
       read -p "Enter filename to search: " file
-      if echo "${users[$user]}" | grep -wq "$file"; then
-        echo "File '$file' found under user '$user'."
+      if [ "${users[$user]+_}" ]; then
+        files=(${users[$user]})
+        found=0
+        for f in "${files[@]}"; do
+          if [ "$f" == "$file" ]; then
+            found=1
+            break
+          fi
+        done
+        if [ $found -eq 1 ]; then
+          echo "File '$file' found under user '$user'."
+        else
+          echo "File not found."
+        fi
       else
-        echo "File not found."
+        echo "User not found!"
       fi
       ;;
     5)
-      for user in "${!users[@]}"; do
-        echo "User: $user → Files: ${users[$user]}"
+      for u in "${!users[@]}"; do
+        echo "User: $u → Files: ${users[$u]}"
       done
       ;;
     6)
